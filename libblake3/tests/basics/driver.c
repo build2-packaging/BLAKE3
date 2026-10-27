@@ -1,73 +1,40 @@
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
+#include <stdint.h>
+#include <string.h> /* strcmp(), memcmp() */
 
 #include <blake3.h>
 
 #undef NDEBUG
 #include <assert.h>
 
-#ifdef _WIN32
-#define tmpfile mytmpfile
-static FILE *mytmpfile ();
-#endif
-
-int main ()
+int
+main ()
 {
-  char b[256];
+  /* Make sure the library we have linked is the one whose header we have
+   * included. In the installed case this catches picking up some other
+   * version from the system.
+   */
+  assert (strcmp (blake3_version (), BLAKE3_VERSION_STRING) == 0);
 
-  /* Basics.
+  /* Hash the empty input, going through the hasher's entire initialize,
+   * update, and finalize sequence. See test_vectors.json in upstream for
+   * the expected value.
    */
   {
-    FILE *o = tmpfile ();
-    assert (say_hello (o, "World") > 0);
-    rewind (o);
-    assert (fread (b, 1, sizeof (b), o) == 14 &&
-            strncmp (b, "Hello, World!\n", 14) == 0);
-    fclose (o);
-  }
+    static const uint8_t e[BLAKE3_OUT_LEN] = {
+      0xaf, 0x13, 0x49, 0xb9, 0xf5, 0xf9, 0xa1, 0xa6,
+      0xa0, 0x40, 0x4d, 0xea, 0x36, 0xdc, 0xc9, 0x49,
+      0x9b, 0xcb, 0x25, 0xc9, 0xad, 0xc1, 0x12, 0xb7,
+      0xcc, 0x9a, 0x93, 0xca, 0xe4, 0x1f, 0x32, 0x62};
 
-  /* Empty name.
-   */
-  {
-    FILE *o = tmpfile ();
-    assert (say_hello (o, "") < 0 && errno == EINVAL);
-    fclose (o);
+    blake3_hasher h;
+    blake3_hasher_init (&h);
+    blake3_hasher_update (&h, "", 0);
+
+    uint8_t r[BLAKE3_OUT_LEN];
+    blake3_hasher_finalize (&h, r, sizeof (r));
+
+    assert (memcmp (r, e, sizeof (r)) == 0);
   }
 
   return 0;
 }
-
-#ifdef _WIN32
-#include <windows.h>
-#include <fcntl.h>
-#include <io.h>
-
-FILE *mytmpfile ()
-{
-  char d[MAX_PATH + 1], p[MAX_PATH + 1];
-  if (GetTempPathA (sizeof (d), d) == 0 ||
-      GetTempFileNameA (d, "tmp", 0, p) == 0)
-    return NULL;
-
-  HANDLE h = CreateFileA (p,
-                          GENERIC_READ | GENERIC_WRITE,
-                          0,
-                          NULL,
-                          CREATE_ALWAYS,
-                          FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE,
-                          NULL);
-  if (h == INVALID_HANDLE_VALUE)
-    return NULL;
-
-  int fd = _open_osfhandle ((intptr_t) h, _O_RDWR);
-  if (fd == -1)
-    return NULL;
-
-  FILE *f = _fdopen (fd, "wb+");
-  if (f == NULL)
-    _close (fd);
-
-  return f;
-}
-#endif
