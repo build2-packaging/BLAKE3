@@ -7,7 +7,7 @@
 #include <assert.h>
 
 int
-main ()
+main (void)
 {
   /* Make sure the library we have linked is the one whose header we have
    * included. In the installed case this catches picking up some other
