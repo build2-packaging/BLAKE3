@@ -1,29 +1,82 @@
-intf_libs = # Interface dependencies.
-impl_libs = # Implementation dependencies.
-#import xxxx_libs += libhello%lib{hello}
+# Select the SIMD implementations that blake3_dispatch.c expects to be
+# linked with on the target CPU (see c/README.md in upstream for
+# background).
+#
+# On x86_64 upstream prefers the assembly implementations since they
+# perform better and more consistently across compilers. We can only
+# compile the GNU flavors, however (the MSVC flavor is MASM), which leaves
+# MSVC with the C intrinsics, the same as on 32-bit x86. On AArch64
+# blake3_impl.h enables NEON by default (except on big-endian) while all
+# the other CPUs only get the portable implementation.
+#
+asm        = false
+intrinsics = false
 
-lib{blake3}: {h c}{**} $impl_libs $intf_libs
+switch $c.target.cpu: regex.match
+{
+  case 'x86_64'
+  {
+    asm        = ($c.class == 'gcc')
+    intrinsics = (!$asm)
+  }
+  case 'i[3-6]86'
+    intrinsics = true
+}
+
+neon = ($c.target.cpu == 'aarch64')
+
+simd = blake3_sse2 blake3_sse41 blake3_avx2 blake3_avx512
+
+lib{blake3}: {h c}{** -{$simd} -blake3_neon}
+lib{blake3}: S{*_unix}:        include = ($asm && $c.target.class != 'windows')
+lib{blake3}: S{*_windows_gnu}: include = ($asm && $c.target.class == 'windows')
+lib{blake3}: c{$simd}:         include = $intrinsics
+lib{blake3}: c{blake3_neon}:   include = $neon
 
 # Build options.
 #
-out_pfx = [dir_path] $out_root/libblake3/
 src_pfx = [dir_path] $src_root/libblake3/
 
-c.poptions =+ "-I$out_pfx" "-I$src_pfx"
+c.poptions =+ "-I$src_pfx"
 
-#obja{*}: c.poptions += -DLIBBLAKE3_STATIC_BUILD
-#objs{*}: c.poptions += -DLIBBLAKE3_SHARED_BUILD
+# Only export the BLAKE3_API functions from the shared library, the same
+# as upstream.
+#
+if ($c.class == 'gcc' && $c.target.class != 'windows')
+  c.coptions += -fvisibility=hidden
+
+objs{*}: c.poptions += -DBLAKE3_DLL -DBLAKE3_DLL_EXPORTS
+
+# Enable the instruction set in each intrinsics implementation. Note that
+# this doesn't raise the target's baseline since these translation units
+# contain nothing but the implementation for their instruction set and
+# blake3_dispatch.c only calls it after detecting CPU support at runtime.
+#
+# MSVC enables SSE2 and SSE4.1 by default and has no options for them. All
+# the Clang variants (including clang-cl), on the other hand, refuse to
+# compile intrinsics unless the corresponding instruction set is enabled.
+#
+if $intrinsics
+{
+  if ($c.class == 'gcc' || $c.id == 'msvc-clang')
+  {
+    {obja objs}{blake3_sse2}:   c.coptions += -msse2
+    {obja objs}{blake3_sse41}:  c.coptions += -msse4.1
+    {obja objs}{blake3_avx2}:   c.coptions += -mavx2
+    {obja objs}{blake3_avx512}: c.coptions += -mavx512f -mavx512vl
+  }
+  else
+  {
+    {obja objs}{blake3_avx2}:   c.coptions += /arch:AVX2
+    {obja objs}{blake3_avx512}: c.coptions += /arch:AVX512
+  }
+}
 
 # Export options.
 #
-lib{blake3}:
-{
-  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
-  c.export.libs = $intf_libs
-}
+lib{blake3}: c.export.poptions = "-I$src_pfx"
 
-#liba{blake3}: c.export.poptions += -DLIBBLAKE3_STATIC
-#libs{blake3}: c.export.poptions += -DLIBBLAKE3_SHARED
+libs{blake3}: c.export.poptions += -DBLAKE3_DLL
 
 # For pre-releases use the complete version to make sure they cannot
 # be used in place of another pre-release or the final version. See
@@ -34,10 +87,8 @@ if $version.pre_release
 else
   lib{blake3}: bin.lib.version = "-$version.major.$version.minor"
 
-# Install recreating subdirectories.
+# Only install the public header and directly into, say, /usr/include/,
+# the same as upstream.
 #
-h{*}:
-{
-  install         = include/
-  install.subdirs = true
-}
+h{blake3}@./: install = include/
+h{*}: install = false
