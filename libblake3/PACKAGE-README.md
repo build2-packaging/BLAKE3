@@ -41,6 +41,27 @@ implementations for each target:
 | AArch64 (little-endian)        | NEON                                     |
 | Other                          | Portable C only                          |
 
+You can disable each x86 SIMD implementation with the configuration
+variables below.
+
 The package builds the library without the optional oneTBB multithreading
 support, which leaves `blake3_hasher_update_tbb()` out of the header. The
 only oneTBB package on cppget.org distributes prebuilt binaries.
+
+
+## Configuration variables
+
+This package provides the following configuration variables:
+
+```
+[bool] config.libblake3.sse2   ?= true
+[bool] config.libblake3.sse41  ?= true
+[bool] config.libblake3.avx2   ?= true
+[bool] config.libblake3.avx512 ?= true
+```
+
+Each variable controls whether the library contains the corresponding x86
+SIMD implementation. Disabling one removes it from the runtime dispatch, the
+same as defining upstream's `BLAKE3_NO_SSE2`, `BLAKE3_NO_SSE41`,
+`BLAKE3_NO_AVX2`, and `BLAKE3_NO_AVX512` macros, respectively. The variables
+have no effect on other CPUs.

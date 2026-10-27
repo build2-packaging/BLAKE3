@@ -25,19 +25,52 @@ switch $c.target.cpu: regex.match
 
 neon = ($c.target.cpu == 'aarch64')
 
-simd = blake3_sse2 blake3_sse41 blake3_avx2 blake3_avx512
+unix = ($asm && $c.target.class != 'windows')
+gnu  = ($asm && $c.target.class == 'windows')
 
-lib{blake3}: {h c}{** -{$simd} -blake3_neon}
-lib{blake3}: S{*_unix}:        include = ($asm && $c.target.class != 'windows')
-lib{blake3}: S{*_windows_gnu}: include = ($asm && $c.target.class == 'windows')
-lib{blake3}: c{$simd}:         include = $intrinsics
-lib{blake3}: c{blake3_neon}:   include = $neon
+# The x86 SIMD implementations enabled in root.build.
+#
+x86 =
+
+if $config.libblake3.sse2
+  x86 += sse2
+
+if $config.libblake3.sse41
+  x86 += sse41
+
+if $config.libblake3.avx2
+  x86 += avx2
+
+if $config.libblake3.avx512
+  x86 += avx512
+
+lib{blake3}: {h c}{** -blake3_sse2 -blake3_sse41 -blake3_avx2 -blake3_avx512 \
+                      -blake3_neon}
+
+for i: sse2 sse41 avx2 avx512
+{
+  e = $find($x86, $i)
+
+  lib{blake3}: S{blake3_$(i)_x86-64_unix}:        include = ($e && $unix)
+  lib{blake3}: S{blake3_$(i)_x86-64_windows_gnu}: include = ($e && $gnu)
+  lib{blake3}: c{blake3_$i}:                      include = ($e && $intrinsics)
+}
+
+lib{blake3}: c{blake3_neon}: include = $neon
 
 # Build options.
 #
 src_pfx = [dir_path] $src_root/libblake3/
 
 c.poptions =+ "-I$src_pfx"
+
+# Remove the disabled x86 SIMD implementations from the runtime dispatch.
+#
+for i: sse2 sse41 avx2 avx512
+{
+  if! $find($x86, $i)
+    c.poptions += "-DBLAKE3_NO_$string.ucase($i)"
+}
 
 # Give the internal C functions hidden visibility, the same as upstream.
 # The public functions are visible through BLAKE3_API, which on Windows

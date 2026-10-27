@@ -1,3 +1,13 @@
+# Build the x86 SIMD implementations. Disabling one removes it from the
+# runtime dispatch, the same as upstream's BLAKE3_NO_* macros (see
+# c/README.md in upstream for background). The NEON and portable
+# implementations stay unaffected.
+#
+config [bool] config.libblake3.sse2   ?= true
+config [bool] config.libblake3.sse41  ?= true
+config [bool] config.libblake3.avx2   ?= true
+config [bool] config.libblake3.avx512 ?= true
+
 # Uncomment to suppress warnings coming from external libraries.
 #
 #c.internal.scope = current
