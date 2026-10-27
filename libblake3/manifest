@@ -3,12 +3,13 @@ name: libblake3
 version: 1.8.7-a.0.z
 language: c
 project: BLAKE3
-summary: blake3 C library
-license: other: proprietary ; Not free/open source.
+summary: BLAKE3 cryptographic hash function C library
+license: CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception ; Public domain or Apache License 2.0 with or without LLVM exception.
+topics: cryptographic hash function, message authentication code, key derivation function, extendable-output function
 description-file: README.md
 package-description-file: PACKAGE-README.md
-url: https://example.org/upstream
-email: upstream@example.org
+url: https://github.com/BLAKE3-team/BLAKE3
+doc-url: https://github.com/BLAKE3-team/BLAKE3/blob/master/c/README.md ; C API.
 package-url: https://github.com/build2-packaging/BLAKE3
 package-email: packaging@build2.org ; Mailing list.
 depends: * build2 >= 0.18.0
