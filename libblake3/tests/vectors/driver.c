@@ -32,8 +32,7 @@ struct test_vectors
 };
 
 /* JSON parser for the subset of the format that the test vectors file
- * uses. Note that it doesn't attempt to recover from errors: it reports
- * the first one and exits.
+ * uses. It reports the first error it encounters and exits.
  */
 struct parser
 {
@@ -138,8 +137,8 @@ hex_value (char c)
 /* Parse a string, returning its decoded value which the caller should
  * free.
  *
- * We decode \uXXXX escapes into UTF-8 except for surrogates, which the
- * test vectors have no use for, and for NUL, which C strings cannot
+ * We decode \uXXXX escapes into UTF-8 and reject surrogates, which the
+ * test vectors have no use for, as well as NUL, which C strings cannot
  * represent.
  */
 static char*
@@ -406,7 +405,7 @@ parse_cases (struct parser* p, struct test_vectors* r)
   size_t capacity = 0;
 
   /* Note that we require at least one case since an empty list most
-   * likely means a broken file rather than nothing to test.
+   * likely means a broken file.
    */
   next (p, '[', "'['");
 

@@ -2,12 +2,12 @@
 # linked with on the target CPU (see c/README.md in upstream for
 # background).
 #
-# On x86_64 upstream prefers the assembly implementations since they
-# perform better and more consistently across compilers. We can only
-# compile the GNU flavors, however (the MSVC flavor is MASM), which leaves
-# MSVC with the C intrinsics, the same as on 32-bit x86. On AArch64
-# blake3_impl.h enables NEON by default (except on big-endian) while all
-# the other CPUs only get the portable implementation.
+# On x86_64 we use the assembly implementations that upstream recommends
+# for their speed. They come in the GNU and MASM flavors and we can only
+# compile the GNU one, so MSVC gets the C intrinsics implementations, as
+# does 32-bit x86. On little-endian AArch64 blake3_impl.h enables NEON by
+# default. Every other CPU uses the portable implementation, which we
+# build everywhere.
 #
 asm        = false
 intrinsics = false
@@ -39,22 +39,24 @@ src_pfx = [dir_path] $src_root/libblake3/
 
 c.poptions =+ "-I$src_pfx"
 
-# Only export the BLAKE3_API functions from the shared library, the same
-# as upstream.
+# Give the internal C functions hidden visibility, the same as upstream.
+# The public functions are visible through BLAKE3_API, which on Windows
+# marks them for DLL export.
 #
 if ($c.class == 'gcc' && $c.target.class != 'windows')
   c.coptions += -fvisibility=hidden
 
 objs{*}: c.poptions += -DBLAKE3_DLL -DBLAKE3_DLL_EXPORTS
 
-# Enable the instruction set in each intrinsics implementation. Note that
-# this doesn't raise the target's baseline since these translation units
-# contain nothing but the implementation for their instruction set and
-# blake3_dispatch.c only calls it after detecting CPU support at runtime.
+# Enable each intrinsics implementation's instruction set for its own
+# translation unit. The target's baseline stays the same since each of
+# these translation units holds the implementation for one instruction set
+# and blake3_dispatch.c calls it only after detecting CPU support at
+# runtime.
 #
-# MSVC enables SSE2 and SSE4.1 by default and has no options for them. All
-# the Clang variants (including clang-cl), on the other hand, refuse to
-# compile intrinsics unless the corresponding instruction set is enabled.
+# GCC and every Clang variant, clang-cl included, require the instruction
+# set to be enabled to compile its intrinsics. MSVC enables SSE2 and SSE4.1
+# by default and only needs the options for AVX2 and AVX-512.
 #
 if $intrinsics
 {
