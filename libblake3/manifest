@@ -1,6 +1,6 @@
 : 1
 name: libblake3
-version: 1.8.7-a.0.z
+version: 1.8.7
 language: c
 project: BLAKE3
 summary: BLAKE3 cryptographic hash function C library
