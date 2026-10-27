@@ -1,0 +1,6 @@
+$out_root/
+{
+  include libblake3/
+}
+
+export $out_root/libblake3/$import.target

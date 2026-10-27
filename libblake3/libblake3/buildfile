@@ -1,0 +1,43 @@
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+#import xxxx_libs += libhello%lib{hello}
+
+lib{blake3}: {h c}{**} $impl_libs $intf_libs
+
+# Build options.
+#
+out_pfx = [dir_path] $out_root/libblake3/
+src_pfx = [dir_path] $src_root/libblake3/
+
+c.poptions =+ "-I$out_pfx" "-I$src_pfx"
+
+#obja{*}: c.poptions += -DLIBBLAKE3_STATIC_BUILD
+#objs{*}: c.poptions += -DLIBBLAKE3_SHARED_BUILD
+
+# Export options.
+#
+lib{blake3}:
+{
+  c.export.poptions = "-I$out_pfx" "-I$src_pfx"
+  c.export.libs = $intf_libs
+}
+
+#liba{blake3}: c.export.poptions += -DLIBBLAKE3_STATIC
+#libs{blake3}: c.export.poptions += -DLIBBLAKE3_SHARED
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{blake3}: bin.lib.version = "-$version.project_id"
+else
+  lib{blake3}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install recreating subdirectories.
+#
+h{*}:
+{
+  install         = include/
+  install.subdirs = true
+}
