@@ -1,0 +1,37 @@
+: upstream-cases
+:
+$* <<<$src_base/test_vectors.json
+
+: wrong-output
+: Test reporting outputs that differ from the expected ones
+:
+$* <<EOI 2>>EOE != 0
+{
+  "key": "whats the Elvish word for friend",
+  "context_string": "BLAKE3 2019-12-27 16:29:52 test vectors context",
+  "cases": [
+    {
+      "input_len": 0,
+      "hash": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262",
+      "keyed_hash": "92b2b75604ed3c761f9d6f62392c8a9227ad0ea3f09573e783f1498a4ed60d26",
+      "derive_key": "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+    }
+  ]
+}
+EOI
+error: derive_key_xof(0): expected af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262 instead of 2cc39783c223154fea8dfb7c1b1660f2ac2dcbd1c1de8277b0b0dd39b7e50d7d
+error: derive_key(0): expected af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262 instead of 2cc39783c223154fea8dfb7c1b1660f2ac2dcbd1c1de8277b0b0dd39b7e50d7d
+EOE
+
+: no-cases
+: Test rejecting an empty list of cases
+:
+$* <<EOI 2>>EOE != 0
+{
+  "key": "whats the Elvish word for friend",
+  "context_string": "BLAKE3 2019-12-27 16:29:52 test vectors context",
+  "cases": []
+}
+EOI
+<stdin>:4:13: error: expected '{' instead of ']'
+EOE

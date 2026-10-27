@@ -1,0 +1,3 @@
+import libs = libblake3%lib{blake3}
+
+exe{driver}: c{**} $libs testscript file{test_vectors.json}
