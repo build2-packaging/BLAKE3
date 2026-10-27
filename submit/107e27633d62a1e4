@@ -1,0 +1,8 @@
+: 1
+name: libblake3
+version: 1.8.7
+language: c
+project: BLAKE3
+summary: BLAKE3 cryptographic hash function C library
+license: CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception; Public\
+ domain or Apache License 2.0 with or without LLVM exception.
