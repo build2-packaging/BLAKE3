@@ -15,18 +15,18 @@ package-email: packaging@build2.org ; Mailing list.
 depends: * build2 >= 0.18.0
 depends: * bpkg >= 0.18.0
 avx2-build-config: config.libblake3.avx512=false; Test AVX2 as the widest SIMD implementation.
-avx2-build-include: */x86_64-**
-avx2-build-include: */i?86-**
+avx2-build-include: **/x86_64-**
+avx2-build-include: **/i?86-**
 avx2-build-exclude: ** ; Only affects x86.
 sse41-build-config: config.libblake3.avx512=false config.libblake3.avx2=false; Test SSE4.1 as the widest SIMD implementation.
-sse41-build-include: */x86_64-**
-sse41-build-include: */i?86-**
+sse41-build-include: **/x86_64-**
+sse41-build-include: **/i?86-**
 sse41-build-exclude: ** ; Only affects x86.
 sse2-build-config: config.libblake3.avx512=false config.libblake3.avx2=false config.libblake3.sse41=false; Test SSE2 as the widest SIMD implementation.
-sse2-build-include: */x86_64-**
-sse2-build-include: */i?86-**
+sse2-build-include: **/x86_64-**
+sse2-build-include: **/i?86-**
 sse2-build-exclude: ** ; Only affects x86.
 portable-build-config: config.libblake3.avx512=false config.libblake3.avx2=false config.libblake3.sse41=false config.libblake3.sse2=false; Test the portable implementation only.
-portable-build-include: */x86_64-**
-portable-build-include: */i?86-**
+portable-build-include: **/x86_64-**
+portable-build-include: **/i?86-**
 portable-build-exclude: ** ; Only affects x86.
